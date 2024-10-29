@@ -1,8 +1,14 @@
 html, body {
-  margin: 0;
-  padding: 0;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #1a4a5a; 
+    overflow: hidden;
 }
 
 canvas {
-  display: block;
+    display: block;
 }
