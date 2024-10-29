@@ -6,7 +6,7 @@ html, body {
     justify-content: center;
     align-items: center;
     background: #1a4a5a; 
-    overflow: hidden;   
+    overflow: hidden; 
 }
 
 canvas {

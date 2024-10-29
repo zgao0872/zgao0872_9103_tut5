@@ -23,13 +23,18 @@ class CircularPattern {
     this.radius = 70; 
     this.colors = colors;
     this.dotSize = 5;
+    // Using Perlin Noise to create an animation offset
+    this.noiseOffset = random(1000);
     this.ringSpacing = 7;
+    // Assigned a constant rotation speed to create animation effect
+    this.rotationSpeed = 0.04;
+    this.currentRotation = random(TWO_PI);
   }
 
-  /**
+    /**
    * Creates a circular bead pattern inside of the circular patterned design.
    * Uses various pattern styles like concentric circles, zigzag lines, and beads.
-   * Used p5.js circle pattern tutorial to create concentric circular.
+   * Used p5.js shape tutorial to create concentric circular bead pattern.
    * @see https://p5js.org/reference/p5/circle/
    */
   drawInternalPattern() {
@@ -55,9 +60,10 @@ class CircularPattern {
           }
         };
         
-        let selectedPalette = circleColorsPalette[this.colors.type] || circleColorsPalette["green"];
         
-         // Draws concentric circles with the selected color palette
+        let selectedPalette = circleColorsPalette[this.colors.type] || circleColorsPalette["green"];
+        // Draws concentric circles with the selected color palette
+        
         for (let r = this.dotSize * 10; r > 0; r -= 10) {
           let color = (r / 10) % 2 === 0 ? selectedPalette.outerCircleColor : selectedPalette.innerCircleColor;
           fill(color);
@@ -65,63 +71,63 @@ class CircularPattern {
         }
         break;
       
-      case "zigzag lines":
+        case "zigzag lines":
         /**
         * Creates a circular bead pattern inside of the circular patterned design.
         * beginShape() and endShape() from p5.js are used to create the zigzag pattern
         * Both learnt from the p5.js shape tutorial:
         @see https://p5js.org/reference/p5/beginShape/
         */
-        stroke(255, 255, 255, 200);
-        strokeWeight(1);
-        noFill();
-
-        // Number of concentric zigzag layers
-        let zigzagLayers = 3;  
-        let baseRadius = 2;
-        
-        for (let layer = 0; layer < zigzagLayers; layer++) {
-          // Increase segments for the outer zigzag layers
-          let segments = 12 + layer * 2;  
-          // Increase radius for each layer
-          let radius = baseRadius + layer * this.dotSize * 2;
+          stroke(255, 255, 255, 200);
+          strokeWeight(1);
+          noFill();
+          // Number of concentric zigzag layers
+          let zigzagLayers = 3;  
+          let baseRadius = 2;
           
-          beginShape();
-          for (let i = 0; i < segments; i++) {
-            let angle = (TWO_PI * i) / segments;
-            // Created zigzag effect by alternating the radius
-            let x = cos(angle) * (radius + (i % 2 ? -4 : 4));
-            let y = sin(angle) * (radius + (i % 2 ? -4 : 4));
-            vertex(x, y);
+          for (let layer = 0; layer < zigzagLayers; layer++) {
+            // Increase segments for the outer zigzag layers
+            let segments = 12 + layer * 2;  
+            // Increase radius for each layer
+            let radius = baseRadius + layer * this.dotSize * 2;  
+            
+            beginShape();
+            for (let i = 0; i < segments; i++) {
+              let angle = (TWO_PI * i) / segments;
+              // Created zigzag effect by alternating the radius
+              let x = cos(angle) * (radius + (i % 2 ? -4 : 4));  
+              let y = sin(angle) * (radius + (i % 2 ? -4 : 4));
+              // Draw vertex for zigzag
+              vertex(x, y);  
+            }
+            endShape(CLOSE);
           }
-          endShape(CLOSE);
-        }
-        
-        noStroke();
-        break;
+          
+          noStroke();
+          break;
 
-      case "beads":
-        // Created the concentric circles of white beads
+        case "beads":
+        // Draws multiple concentric circles of white beads
         // Inspired by the traditional mandala patterns
-        fill(255, 255, 255);
-        // Number of bead layers (concentric circles)
-        let beadLayers = 2;
-        
-        for (let layer = 1; layer <= beadLayers; layer++) {
-          // Increase the bead count for each layer
-          let beadCount = 8 * layer;
-          // Each layer has a larger radius
-          let beadRadius = this.dotSize * 2 * layer;
+          fill(255, 255, 255);
+          // Number of bead layers (concentric circles)
+          let beadLayers = 2;  
           
-          for (let i = 0; i < beadCount; i++) {
-            let angle = (TWO_PI * i) / beadCount;
-            let x = cos(angle) * beadRadius;
-            let y = sin(angle) * beadRadius;
-            // Draw a bead at (x, y)
-            circle(x, y, this.dotSize);
+          for (let layer = 1; layer <= beadLayers; layer++) {
+            // Increase the bead count for each layer
+            let beadCount = 8 * layer;  
+            // Each layer has a larger radius
+            let beadRadius = this.dotSize * 2 * layer;  
+            
+            for (let i = 0; i < beadCount; i++) {
+              let angle = (TWO_PI * i) / beadCount;
+              let x = cos(angle) * beadRadius;
+              let y = sin(angle) * beadRadius;
+              // Draw a bead at (x, y)
+              circle(x, y, this.dotSize);  
+            }
           }
-        }
-        break;
+          break;
         
       default:
         // Simple white center if no internalPatternStyle is defined
@@ -135,14 +141,17 @@ class CircularPattern {
    * push() and pop() from p5.js is used for transformation isolation
    * @see https://p5js.org/reference/p5/push/
    */
+
   display() {
     push();
     translate(this.x, this.y);
 
-    // Draws the main background of the circle
+     // Draws the main background of the circle
     noStroke();
     fill(this.colors.bgColors);
     circle(0, 0, this.radius * 2);
+    // Rotating the pattern with the help of currentRotation property
+    rotate(this.currentRotation);
 
     // Creates a series of dots placed on concentric circles.
     // The algorithm calculates the optimal spacing for the dots based on circumference.
@@ -160,8 +169,20 @@ class CircularPattern {
       }
     }
 
+    // Draw center detail
     this.drawInternalPattern();
-    pop();
+    pop(); 
+ 
+  }
+
+  
+  
+
+  update() {
+    // Increasing the currentRotation speed to create an animation effect
+    this.currentRotation += this.rotationSpeed;
+     // Increasing the noiseOffset to create a Perlin noise based animation effect
+    this.noiseOffset += 0.01;
   }
 
   /**
@@ -170,8 +191,9 @@ class CircularPattern {
    * Returns True if any pattern overlaps
    * @param {CircularPattern} other - is an another pattern that is used to check for overlap
    */
+
   overlaps(other) {
-    const minDistance = this.radius * 2 + 10;
+    const minDistance = this.radius * 2 + 10; // Reduced padding to fit more patterns
     const distance = dist(this.x, this.y, other.x, other.y);
     return distance < minDistance;
   }
@@ -180,19 +202,21 @@ class CircularPattern {
 /**
  * DecorativeBead class is used to create the connecting elements for the beads
  * Creates a tri-colored bead using layered circles
- * Technique learnt from the p5.js glow effects tutorial
+ * Technique learnt from the p5.js Color Gradients tutorial
  * @see https://p5js.org/tutorials/color-gradients/
  */
 class DecorativeBead {
   constructor(x, y) {
     this.x = x;
     this.y = y;
-    this.size = 13.5;
+    this.size = random(12, 15);
     this.glowSize = this.size * 1.5;
     this.innerSize = this.size * 0.4;
+    // Using Perlin noise for creating an animation offset
+    this.noiseOffset = random(200);
+    this.noiseOffsetY = random(200);
   }
-
-  /**
+   /**
    * Displays the bead with glowing effect
    * Uses multiple layers to create visual depth effect
    */
@@ -217,21 +241,32 @@ class DecorativeBead {
     
     pop();
   }
+
+
+
+  update() {
+    // Using Perlin noise for creating an animated movement effect
+    this.x += map(noise(this.noiseOffset), 0, 1, -0.2, 0.2);
+    this.y += map(noise(this.noiseOffsetY), 0, 1, -0.2, 0.2);
+    this.noiseOffset += 0.01;
+    this.noiseOffsetY += 0.01;
+  }
 }
 
-/**
+  /**
  * Draws the curved connections between beads
  * Uses p5.js noise() for organic curve variation
- * Technique learnt from the p5.js curve vertex tutorial
+ * Technique learnt from the p5.js curve tutorial
  * @see https://p5js.org/reference/p5/curveVertex/
  */
+
 function drawCurvyConnections() {
   let connectionCounts = new Array(beads.length).fill(0);
   let connections = [];
 
   // First pass: ensure minimum connections to the bead
   for (let i = 0; i < beads.length; i++) {
-    if (connectionCounts[i] === 0) {
+    if (connectionCounts[i] === 0) {  
       let closestDist = Infinity;
       let closestIndex = -1;
       
@@ -239,13 +274,14 @@ function drawCurvyConnections() {
       for (let j = 0; j < beads.length; j++) {
         if (i !== j && connectionCounts[j] < 3) {
           let d = dist(beads[i].x, beads[i].y, beads[j].x, beads[j].y);
-          if (d < closestDist && d < 120) {
+          if (d < closestDist && d < 120) {  
             closestDist = d;
             closestIndex = j;
           }
         }
       }
       
+      // Connect to the closest bead if found
       if (closestIndex !== -1) {
         connections.push({
           bead1: i,
@@ -262,11 +298,13 @@ function drawCurvyConnections() {
   for (let i = 0; i < beads.length; i++) {
     if (connectionCounts[i] >= 3) continue;
 
+    // Find all possible additional connections for this bead
     let possibleConnections = [];
     for (let j = 0; j < beads.length; j++) {
       if (i !== j && connectionCounts[j] < 3) {
         let d = dist(beads[i].x, beads[i].y, beads[j].x, beads[j].y);
-        if (d < 100) {
+        if (d < 100) {  
+          
           let exists = connections.some(c => 
             (c.bead1 === i && c.bead2 === j) || 
             (c.bead1 === j && c.bead2 === i)
@@ -283,6 +321,7 @@ function drawCurvyConnections() {
       }
     }
 
+    
     possibleConnections.sort((a, b) => a.distance - b.distance);
     for (let conn of possibleConnections) {
       if (connectionCounts[i] < 3 && connectionCounts[conn.bead2] < 3) {
@@ -292,24 +331,24 @@ function drawCurvyConnections() {
       }
     }
   }
+
   /** 
   * Draws curved connections with a glowing effect
   * Using multiple strokes that have varying opacity for glowing effect
-  * Technique learnt from the creative coding glow effects
+  * Technique learnt from the creative coding glow effects tutorial
   * @see https://p5js.org/reference/p5/stroke/
   */
-  
   for (let conn of connections) {
     let bead1 = beads[conn.bead1];
     let bead2 = beads[conn.bead2];
     
+     // Using Perlin noise for creating a fluid animated effect for the curve connections
     for (let k = 3; k >= 0; k--) {
       stroke(244, 123, 35, map(k, 0, 3, 50, 200));
       strokeWeight(map(k, 0, 3, 3, 0.8));
       
       let midX = (bead1.x + bead2.x) / 2;
       let midY = (bead1.y + bead2.y) / 2;
-      
       // Use noise for the organic curve variation
       let offsetX = map(noise(conn.bead1 * 0.1, conn.bead2 * 0.1), 0, 1, -15, 15);
       let offsetY = map(noise(conn.bead2 * 0.1, conn.bead1 * 0.1), 0, 1, -15, 15);
@@ -409,11 +448,10 @@ function setup() {
       }
     }
   }
-
   // Initialized the decorative beads with connection constraints
   let attempts = 0;
-  const maxAttempts = 2000;
-  const minBeads = 400;
+  const maxAttempts = 2000;  
+  const minBeads = 400;      
   
   while (beads.length < minBeads && attempts < maxAttempts) {
     let x = random(width);
@@ -436,14 +474,15 @@ function setup() {
       
       for (let bead of beads) {
         let d = dist(x, y, bead.x, bead.y);
-        if (d < 35) {
+        if (d < 35) {  
           tooClose = true;
           break;
         }
-        if (d < 120) {
+        if (d < 120) {  
           hasNearbyBead = true;
         }
       }
+      
       
       validPosition = !tooClose && (beads.length === 0 || hasNearbyBead);
     }
@@ -454,6 +493,7 @@ function setup() {
     
     attempts++;
   }
+
 }
 
 /**
@@ -468,6 +508,7 @@ function draw() {
   
   // Draws various circular patterned designs
   patterns.forEach(pattern => {
+    pattern.update();
     pattern.display();
   });
   
@@ -476,6 +517,7 @@ function draw() {
   
   // Draws various beads
   beads.forEach(bead => {
+    bead.update();
     bead.display();
   });
 }
@@ -494,3 +536,9 @@ function windowResized() {
   beads = [];
   setup();
 }
+
+
+
+
+
+
