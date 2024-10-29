@@ -5,7 +5,7 @@ html, body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background: #1a4a5a; 
+    background: #1a4a5a; /* Dark teal background matching the artwork */
     overflow: hidden;
 }
 

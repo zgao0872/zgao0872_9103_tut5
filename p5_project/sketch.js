@@ -1,6 +1,6 @@
 let patterns = [];
+let beads = [];
 const padding = 20;
-
 
 class CircularPattern {
   constructor(x, y, colors) {
@@ -10,7 +10,6 @@ class CircularPattern {
     this.colors = colors;
     this.dotSize = 5;
     this.ringSpacing = 7;
-   
   }
 
   drawInternalPattern() {
@@ -95,13 +94,12 @@ class CircularPattern {
   display() {
     push();
     translate(this.x, this.y);
-  
 
     noStroke();
     fill(this.colors.bgColors);
     circle(0, 0, this.radius * 2);
 
-   
+    rotate(this.rotation);
 
     for (let r = this.radius-5; r > 0; r -= this.ringSpacing) {
       const circumference = TWO_PI * r;
@@ -128,7 +126,125 @@ class CircularPattern {
   }
 }
 
+class DecorativeBead {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.size = 13.5; 
+    this.glowSize = this.size * 1.5;
+    this.innerSize = this.size * 0.4;
+  }
 
+  display() {
+    push();
+    translate(this.x, this.y);
+    
+    noStroke();
+    let glowColor = color('#f47b23');
+    
+    fill(glowColor);
+    circle(0, 0, this.glowSize);
+    
+    fill('black');
+    circle(0, 0, this.size);
+    
+    fill("white");
+    circle(0, 0, this.innerSize);
+    
+    pop();
+  }
+}
+
+function drawCurvyConnections() {
+  let connectionCounts = new Array(beads.length).fill(0);
+  let connections = [];
+
+  for (let i = 0; i < beads.length; i++) {
+    if (connectionCounts[i] === 0) {
+      let closestDist = Infinity;
+      let closestIndex = -1;
+      
+      for (let j = 0; j < beads.length; j++) {
+        if (i !== j && connectionCounts[j] < 3) {
+          let d = dist(beads[i].x, beads[i].y, beads[j].x, beads[j].y);
+          if (d < closestDist && d < 120) {
+            closestDist = d;
+            closestIndex = j;
+          }
+        }
+      }
+      
+      if (closestIndex !== -1) {
+        connections.push({
+          bead1: i,
+          bead2: closestIndex,
+          distance: closestDist
+        });
+        connectionCounts[i]++;
+        connectionCounts[closestIndex]++;
+      }
+    }
+  }
+
+  for (let i = 0; i < beads.length; i++) {
+    if (connectionCounts[i] >= 3) continue;
+
+    let possibleConnections = [];
+    for (let j = 0; j < beads.length; j++) {
+      if (i !== j && connectionCounts[j] < 3) {
+        let d = dist(beads[i].x, beads[i].y, beads[j].x, beads[j].y);
+        if (d < 100) {
+          let exists = connections.some(c => 
+            (c.bead1 === i && c.bead2 === j) || 
+            (c.bead1 === j && c.bead2 === i)
+          );
+          
+          if (!exists) {
+            possibleConnections.push({
+              bead1: i,
+              bead2: j,
+              distance: d
+            });
+          }
+        }
+      }
+    }
+
+    possibleConnections.sort((a, b) => a.distance - b.distance);
+    for (let conn of possibleConnections) {
+      if (connectionCounts[i] < 3 && connectionCounts[conn.bead2] < 3) {
+        connections.push(conn);
+        connectionCounts[i]++;
+        connectionCounts[conn.bead2]++;
+      }
+    }
+  }
+
+  for (let conn of connections) {
+    let bead1 = beads[conn.bead1];
+    let bead2 = beads[conn.bead2];
+    
+    for (let k = 3; k >= 0; k--) {
+      stroke(244, 123, 35, map(k, 0, 3, 50, 200));
+      strokeWeight(map(k, 0, 3, 3, 0.8));
+      
+      let midX = (bead1.x + bead2.x) / 2;
+      let midY = (bead1.y + bead2.y) / 2;
+      
+    
+      let offsetX = 0;
+      let offsetY = 0;
+      
+      beginShape();
+      curveVertex(bead1.x, bead1.y);
+      curveVertex(bead1.x, bead1.y);
+      curveVertex(midX + offsetX, midY + offsetY);
+      curveVertex(bead2.x, bead2.y);
+      curveVertex(bead2.x, bead2.y);
+      endShape();
+    }
+  }
+}
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -188,11 +304,12 @@ function setup() {
   let gridSize = 150;
   for (let x = gridSize/2; x < width - gridSize/2; x += gridSize) {
     for (let y = gridSize/2; y < height - gridSize/2; y += gridSize) {
-      let posX = x; 
-      let posY = y; 
+      let posX = x;  
+      let posY = y;  
+      
       const choosenPallete = random(arrayOfColors);
       const pattern = new CircularPattern(posX, posY, choosenPallete)
-
+      
       let overlapping = false;
       for (let other of patterns) {
         if (pattern.overlaps(other)) {
@@ -207,8 +324,24 @@ function setup() {
     }
   }
 
- 
-  
+  let beadSpacing = 40;
+  for (let x = beadSpacing; x < width - beadSpacing; x += beadSpacing) {
+    for (let y = beadSpacing; y < height - beadSpacing; y += beadSpacing) {
+      let validPosition = true;
+      
+      for (let pattern of patterns) {
+        let d = dist(x, y, pattern.x, pattern.y);
+        if (d < pattern.radius + 20) {
+          validPosition = false;
+          break;
+        }
+      }
+      
+      if (validPosition) {
+        beads.push(new DecorativeBead(x, y));
+      }
+    }
+  }
 }
 
 function draw() {
@@ -218,13 +351,16 @@ function draw() {
     pattern.display();
   });
   
- 
+  drawCurvyConnections();
   
-  
+  beads.forEach(bead => {
+    bead.display();
+  });
 }
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
   patterns = [];
+  beads = [];
   setup();
 }
